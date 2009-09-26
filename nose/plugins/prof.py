@@ -56,7 +56,7 @@ class Profile(Plugin):
     def available(cls):
         return hotshot is not None
     available = classmethod(available)
-        
+
     def begin(self):
         """Create profile stats file and load profiler.
         """
@@ -82,7 +82,7 @@ class Profile(Plugin):
         self.fileno = None
         self.sort = options.profile_sort
         self.restrict = tolist(options.profile_restrict)
-            
+
     def prepareTest(self, test):
         """Wrap entire test run in :func:`prof.runcall`.
         """
@@ -93,7 +93,7 @@ class Profile(Plugin):
             self._create_pfile()
             prof.runcall(test, result)
         return run_and_profile
-        
+
     def report(self, stream):
         """Output profiler report.
         """

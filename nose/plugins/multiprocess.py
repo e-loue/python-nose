@@ -87,6 +87,7 @@ import sys
 import time
 import traceback
 import unittest
+import pickle
 import nose.case
 from nose.core import TextTestRunner
 from nose import failure
@@ -108,10 +109,6 @@ Process = Queue = Pool = Event = None
 
 def _import_mp():
     global Process, Queue, Pool, Event
-    if sys.platform == 'win32':
-        warn("multiprocess plugin is not available on windows",
-             RuntimeWarning)
-        return
     try:
         from multiprocessing import Process as Process_, \
             Queue as Queue_, Pool as Pool_, Event as Event_
@@ -120,7 +117,7 @@ def _import_mp():
         warn("multiprocessing module is not available, multiprocess plugin "
              "cannot be used", RuntimeWarning)
 
-        
+
 class TestLet:
     def __init__(self, case):
         try:
@@ -146,13 +143,11 @@ class MultiProcess(Plugin):
     """
     score = 1000
     status = {}
-    
+
     def options(self, parser, env):
         """
         Register command-line options.
         """
-        if sys.platform == 'win32':
-            return
         parser.add_option("--processes", action="store",
                           default=env.get('NOSE_PROCESSES', 0),
                           dest="multiprocess_workers",
@@ -172,14 +167,15 @@ class MultiProcess(Plugin):
         """
         Configure plugin.
         """
-        if sys.platform == 'win32':
-            return
         try:
             self.status.pop('active')
         except KeyError:
             pass
         if not hasattr(options, 'multiprocess_workers'):
             self.enabled = False
+            return
+        # don't start inside of a worker process
+        if config.worker:
             return
         self.config = config
         try:
@@ -195,7 +191,7 @@ class MultiProcess(Plugin):
             self.config.multiprocess_workers = workers
             self.config.multiprocess_timeout = int(options.multiprocess_timeout)
             self.status['active'] = True
-            
+
     def prepareTestLoader(self, loader):
         """Remember loader class so MultiProcessTestRunner can instantiate
         the right loader.
@@ -290,7 +286,7 @@ class MultiProcessTestRunner(TextTestRunner):
                                              shouldStop,
                                              self.loaderClass,
                                              result.__class__,
-                                             self.config))
+                                             pickle.dumps(self.config)))
             # p.setDaemon(True)
             p.start()
             workers.append(p)
@@ -387,7 +383,7 @@ class MultiProcessTestRunner(TextTestRunner):
             or not getattr(test, 'can_split', True)
             or not isinstance(test, unittest.TestSuite)):
             # regular test case, or a suite with context fixtures
-            
+
             # special case: when run like nosetests path/to/module.py
             # the top-level suite has only one item, and it shares
             # the same context as that item. In that case, we want the
@@ -452,10 +448,13 @@ class MultiProcessTestRunner(TextTestRunner):
 
 def runner(ix, testQueue, resultQueue, shouldStop,
            loaderClass, resultClass, config):
+    config = pickle.loads(config)
+    config.plugins.begin()
     log.debug("Worker %s executing", ix)
+    log.debug("Active plugins worker %s: %s", ix, config.plugins._plugins)
     loader = loaderClass(config=config)
     loader.suiteClass.suiteClass = NoSharedFixtureContextSuite
-
+    
     def get():
         case = testQueue.get(timeout=config.multiprocess_timeout)
         return case
