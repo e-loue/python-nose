@@ -17,6 +17,8 @@
   2.5 and later. Thanks to djs at n-cube dot org for the bug report (#285).
 - Improved logcapture filtering, with default setting to filter out log
   messages from nose itself. Thanks to gfxmonk for the patch (#277).
+- The xunit plugin now tags skipped tests with a <skipped> testcase tag, and
+  prevents the XML from containing invalid control characters.
 
 0.11.1
 

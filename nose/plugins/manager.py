@@ -62,7 +62,7 @@ try:
 except:
     from StringIO import StringIO
 
-    
+
 __all__ = ['DefaultPluginManager', 'PluginManager', 'EntryPointPluginManager',
            'BuiltinPluginManager', 'RestrictedPluginManager']
 
@@ -248,6 +248,11 @@ class PluginManager(object):
         return iter(self.plugins)
 
     def addPlugin(self, plug):
+        # allow, for instance, plugins loaded via entry points to
+        # supplant builtin plugins.
+        new_name = getattr(plug, 'name', object())
+        self._plugins[:] = [p for p in self._plugins
+                            if getattr(p, 'name', None) != new_name]
         self._plugins.append(plug)
 
     def addPlugins(self, plugins):
@@ -347,14 +352,14 @@ class ZeroNinePlugin:
     def __getattr__(self, val):
         return getattr(self.plugin, val)
 
-            
+
 class EntryPointPluginManager(PluginManager):
     """Plugin manager that loads plugins from the `nose.plugins` and
     `nose.plugins.0.10` entry points.
     """
     entry_points = (('nose.plugins.0.10', None),
                     ('nose.plugins', ZeroNinePlugin))
-    
+
     def loadPlugins(self):
         """Load plugins by iterating the `nose.plugins` entry point.
         """
@@ -397,7 +402,7 @@ class BuiltinPluginManager(PluginManager):
         from nose.plugins import builtin
         for plug in builtin.plugins:
             self.addPlugin(plug())
-        
+
 try:
     import pkg_resources
     class DefaultPluginManager(BuiltinPluginManager, EntryPointPluginManager):
@@ -418,7 +423,7 @@ class RestrictedPluginManager(DefaultPluginManager):
         self.exclude = exclude
         self.excluded = []
         self._excludedOpts = None
-        
+
     def excludedOption(self, name):
         if self._excludedOpts is None:
             from optparse import OptionParser
@@ -426,7 +431,7 @@ class RestrictedPluginManager(DefaultPluginManager):
             for plugin in self.excluded:
                 plugin.options(self._excludedOpts, env={})
         return self._excludedOpts.get_option('--' + name)
-        
+
     def loadPlugins(self):
         if self.load:
             DefaultPluginManager.loadPlugins(self)
@@ -441,5 +446,3 @@ class RestrictedPluginManager(DefaultPluginManager):
             if ok:
                 allow.append(plugin)
         self.plugins = allow
-
-    
