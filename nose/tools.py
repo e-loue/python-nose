@@ -8,6 +8,7 @@ on any of these methods.
 """
 import re
 import time
+import inspect
 import unittest
 
 
@@ -170,7 +171,7 @@ def nottest(func):
     return func
 
 #
-# Expose assert* from unittest.TestCase
+# Expose assert* and fail* from unittest.TestCase
 # - give them pep8 style names
 #
 caps = re.compile('([A-Z])')
@@ -184,7 +185,7 @@ class Dummy(unittest.TestCase):
 _t = Dummy('nop')
 
 for at in [ at for at in dir(_t)
-            if at.startswith('assert') and not '_' in at ]:
+            if (at.startswith('assert') or at.startswith('fail')) and not '_' in at and inspect.ismethod(getattr(_t, at)) ]:
     pepd = pep8(at)
     vars()[pepd] = getattr(_t, at)
     __all__.append(pepd)
