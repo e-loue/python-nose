@@ -64,7 +64,7 @@ class Coverage(Plugin):
         if not self._coverInstance:
             import coverage
             try:    
-                self._coverInstance = coverage.coverage(auto_data=True, branch=self.coverBranches)
+                self._coverInstance = coverage.coverage(branch=self.coverBranches)
             except coverage.CoverageException:
                 self._coverInstance = coverage
         return self._coverInstance 
