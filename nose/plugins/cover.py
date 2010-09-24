@@ -64,7 +64,7 @@ class Coverage(Plugin):
         if not self._coverInstance:
             import coverage
             try:    
-                self._coverInstance = coverage.coverage()
+                self._coverInstance = coverage.coverage(auto_data=True, branch=self.coverBranches)
             except coverage.CoverageException:
                 self._coverInstance = coverage
         return self._coverInstance 
@@ -107,6 +107,11 @@ class Coverage(Plugin):
                           dest='cover_html_dir',
                           metavar='DIR',
                           help='Produce HTML coverage information in dir')
+        parser.add_option("--cover-branches", action="store_true",
+                            dest="cover_branches",
+                            default=env.get('NOSE_COVER_BRANCHES'),
+                            help="Include branch coverage in coverage report "
+                            "[NOSE_COVER_BRANCHES]")
 
     def configure(self, options, config):
         """
@@ -142,6 +147,7 @@ class Coverage(Plugin):
         if options.cover_html:
             self.coverHtmlDir = options.cover_html_dir
             log.debug('Will put HTML coverage report in %s', self.coverHtmlDir)
+        self.coverBranches = options.cover_branches
         if self.enabled:
             self.status['active'] = True
 
