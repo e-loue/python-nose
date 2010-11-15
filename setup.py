@@ -1,10 +1,29 @@
 import sys
+import os
 
-VERSION = '0.11.4'
+VERSION = '1.0.0'
 py_vers_tag = '-%s.%s' % sys.version_info[:2]
 
+test_dirs = ['functional_tests', 'unit_tests', os.path.join('doc','doc_tests'), 'nose']
+
+if sys.version_info >= (3,):
+    try:
+        import setuptools
+    except ImportError:
+        from distribute_setup import use_setuptools
+        use_setuptools()
+
+    extra = {'use_2to3': True,
+             'test_dirs': test_dirs,
+             'test_build_dir': 'build/tests',
+             'pyversion_patching': True,
+             }
+else:
+    extra = {}
+
 try:
-    from setuptools import setup, find_packages
+    from setup3lib import setup
+    from setuptools import find_packages
     addl_args = dict(
         zip_safe = False,
         packages = find_packages(),
@@ -19,6 +38,7 @@ try:
         },
         test_suite = 'nose.collector',
         )
+    addl_args.update(extra)
 
     # This is required by multiprocess plugin; on Windows, if
     # the launch script is not import-safe, spawned processes
@@ -96,6 +116,7 @@ setup(
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
         'Topic :: Software Development :: Testing'
         ],
     **addl_args
